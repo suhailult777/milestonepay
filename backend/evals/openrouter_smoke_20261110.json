@@ -1,0 +1,25 @@
+{
+  "date_ist": "2026-11-10T18:27:07+05:30",
+  "scope": "Live OpenRouter free-model smoke, bundled sample contract only, no real client data",
+  "max_calls_allowed": 3,
+  "prior_live_calls": 2,
+  "calls_used_this_run": 1,
+  "calls_used_total": 3,
+  "model_candidates": [
+    "google/gemma-4-26b-a4b-it:free"
+  ],
+  "attempts": [
+    {
+      "status": "rate_limited",
+      "model_requested": "google/gemma-4-26b-a4b-it:free",
+      "latency_seconds": 1.28
+    }
+  ],
+  "result": {
+    "status": "rate_limited",
+    "model_requested": "google/gemma-4-26b-a4b-it:free",
+    "latency_seconds": 1.28
+  },
+  "summary": "Three allowed live calls were used. The first two free-model attempts failed before the final guarded call; their detailed statuses were not retained. The final call was rate-limited. No live free-model pass is claimed. Mocked provider tests and the local Ollama fallback remain the verified path.",
+  "notes": "No key, headers, or raw model output are stored. Free models only; stop on any credit sign."
+}

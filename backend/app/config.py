@@ -1,5 +1,11 @@
 import os
 from dataclasses import dataclass
+from pathlib import Path
+
+
+def _default_openrouter_env() -> str:
+    # Outside the repo. The file holds the key; never print or commit it.
+    return str(Path.home() / "milestonepay_secrets" / ".env.openrouter")
 
 
 @dataclass(frozen=True)
@@ -9,9 +15,14 @@ class Settings:
     paypal_client_secret: str
     paypal_webhook_id: str
     paypal_merchant_email: str
-    llm_provider: str  # "sample" or "ollama"
+    llm_provider: str  # "sample", "ollama", "openrouter", or "auto"
     llm_base_url: str
     llm_model: str
+    openrouter_env_file: str
+    openrouter_model: str
+    openrouter_preset: str
+    openrouter_fallbacks: str
+    openrouter_timeout: float
     db_path: str
 
     @property
@@ -30,10 +41,17 @@ def load() -> Settings:
         llm_provider=os.getenv("LLM_PROVIDER", "sample"),
         llm_base_url=os.getenv("LLM_BASE_URL", "http://127.0.0.1:11434"),
         llm_model=os.getenv("LLM_MODEL", "qwen2.5:3b-instruct"),
+        openrouter_env_file=os.getenv("OPENROUTER_ENV_FILE", _default_openrouter_env()),
+        openrouter_model=os.getenv("OPENROUTER_MODEL", ""),
+        openrouter_preset=os.getenv("OPENROUTER_PRESET", ""),
+        openrouter_fallbacks=os.getenv("OPENROUTER_FALLBACKS", ""),
+        openrouter_timeout=float(os.getenv("OPENROUTER_TIMEOUT", "45")),
         db_path=os.getenv("MP_DB", "milestonepay.sqlite3"),
     )
     if s.mode not in ("sample", "live"):
         raise ValueError("MP_MODE must be sample or live")
+    if s.llm_provider not in ("sample", "ollama", "openrouter", "auto"):
+        raise ValueError("LLM_PROVIDER must be sample, ollama, openrouter, or auto")
     if s.mode == "live":
         missing = [k for k, v in {
             "PAYPAL_CLIENT_ID": s.paypal_client_id,

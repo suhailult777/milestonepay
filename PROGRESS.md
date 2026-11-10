@@ -2,7 +2,7 @@
 
 ## 10 Nov 2026 (laptop, OpenBot takeover)
 
-- Repo extracted to `C:\Users\suhai\milestonepay`, `.git` intact, head `98ffa3b`.
+- Repo extracted locally, `.git` intact, head `98ffa3b`.
 - Python 3.12.6 venv, backend deps installed, Node 26.13.0, npm 11.6.2, Ollama 0.40.15.
 - **64 pytest tests pass** (1.62 s on laptop; one Starlette/httpx deprecation warning). Added 20 amount-format cases, 7 date cases, range/limit evidence checks, and two prompt-injection tests.
 - Web production build passes.

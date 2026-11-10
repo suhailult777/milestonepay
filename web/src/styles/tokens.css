@@ -1,0 +1,119 @@
+:root {
+  --ground: #eceef1;
+  --sheet: #ffffff;
+  --sunk: #e3e6ea;
+  --line: #d3d8de;
+  --line-strong: #8791a0;
+  --ink: #15181d;
+  --ink-2: #434b56;
+  --ink-3: #58616d;
+  --marker: #ffe45c;
+  --marker-tint: #fff1a6;
+  --marker-ink: #15181d;
+  --demo-bg: #eef0f3;
+  --caution: #8a4b00;
+  --caution-tint: #fbe8d3;
+  --paid: #0b6b4f;
+  --paid-tint: #ddf3ea;
+  --sent: #1f3fbf;
+  --sent-tint: #e3e9ff;
+  --lock: #58616d;
+  --lock-tint: #e3e6ea;
+  --danger: #b3261e;
+  --danger-tint: #fce4e1;
+  --focus: #1f3fbf;
+  --btn-hover: #2b313a;
+  --btn: var(--ink);
+  --btn-ink: #ffffff;
+  --shadow-rgb: 21 24 29;
+
+  --font-ui: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-doc: "Source Serif 4 Variable", Georgia, serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, Consolas, monospace;
+
+  --t-label: 13px / 18px;
+  --t-body: 14px / 21px;
+  --t-doc: 17px / 28px;
+  --t-h3: 20px / 28px;
+  --t-h2: 24px / 32px;
+  --t-h1: 29px / 36px;
+  --t-fig: 35px / 40px;
+  --t-fig-xl: 42px / 48px;
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
+
+  --r-sheet: 10px;
+  --r-control: 6px;
+  --r-chip: 4px;
+
+  --e-0: none;
+  --e-1: 0 1px 0 var(--line), 0 12px 32px -20px rgb(var(--shadow-rgb) / 0.28);
+  --e-2: 0 2px 4px rgb(var(--shadow-rgb) / 0.1), 0 24px 48px -12px rgb(var(--shadow-rgb) / 0.3);
+
+  --dur-micro: 120ms;
+  --dur-short: 200ms;
+  --dur-hero: 420ms;
+  --dur-count: 600ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* Compatibility aliases for the phase 2 classes while the v3 pages land. */
+  --paper: var(--ground);
+  --panel: var(--sheet);
+  --panel-2: var(--sunk);
+  --muted: var(--ink-3);
+  --accent: var(--ink);
+  --accent-strong: var(--btn-hover);
+  --accent-soft: var(--sunk);
+  --on-accent: var(--btn-ink);
+  --on-ink: var(--btn-ink);
+  --ok: var(--paid);
+  --ok-soft: var(--paid-tint);
+  --warn: var(--danger);
+  --warn-soft: var(--danger-tint);
+  --danger-soft: var(--danger-tint);
+  --neutral-soft: var(--sunk);
+  --overlay: rgb(21 24 29 / 0.48);
+  --radius: var(--r-sheet);
+  --radius-sm: var(--r-control);
+  --shadow: var(--e-1);
+  --shadow-sm: var(--e-0);
+}
+
+[data-theme="dark"] {
+  --ground: #12171e;
+  --sheet: #1a212b;
+  --sunk: #0e1318;
+  --line: #2c3644;
+  --line-strong: #66758a;
+  --ink: #eef1f5;
+  --ink-2: #bac3cf;
+  --ink-3: #9aa5b3;
+  --marker: #f5d93a;
+  --marker-tint: #3a3416;
+  --demo-bg: #232b36;
+  --caution: #f2ad6a;
+  --caution-tint: #3a2614;
+  --paid: #4cd6a0;
+  --paid-tint: #12352a;
+  --sent: #9db0ff;
+  --sent-tint: #1b2552;
+  --lock: #9aa5b3;
+  --lock-tint: #232c38;
+  --danger: #ff8f85;
+  --danger-tint: #3f1b1a;
+  --focus: #9db0ff;
+  --btn-hover: #dce2e9;
+  --btn: #f4f6f8;
+  --btn-ink: #15181d;
+  --shadow-rgb: 0 0 0;
+
+  --overlay: rgb(0 0 0 / 0.62);
+}

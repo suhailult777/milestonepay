@@ -258,8 +258,9 @@ def test_crash_after_accept_left_in_flight(env):
     svc, pp, pid, ms = approved(env)
     # Simulate process crash: claim taken and PayPal created the invoice, but DB never saved it.
     svc.c.execute("UPDATE milestones SET op_state='IN_FLIGHT' WHERE id=?", (ms[0]["id"],))
-    pp.create_draft_invoice(request_id="x", merchant_email="m", recipient_email="c", title="t", amount="400.00",
-                            currency="USD", due_date="2026-11-20", number=f"MP-{pid}-1")
+    project = svc.view(pid)
+    pp.create_draft_invoice(request_id="x", merchant_email=pp.merchant_email, recipient_email=project["client_email"],
+                            title="t", amount="400.00", currency="USD", due_date="2026-11-20", number=f"MP-{pid}-1")
     with pytest.raises(Rejected):
         svc.draft_invoice(ms[0]["id"], "t")
     assert svc.reconcile_creation(ms[0]["id"], "t")["recovered_invoice_id"] and pp.create_calls == 1
@@ -348,7 +349,13 @@ def test_api_requires_token(monkeypatch, tmp_path):
     from fastapi.testclient import TestClient
     c = TestClient(M.app)
     assert c.post("/api/projects", json={"text": SAMPLE_CONTRACT}).status_code == 401
-    assert c.post("/api/projects", json={"text": SAMPLE_CONTRACT}, headers={"X-MP-Token": "tok"}).status_code == 200
+    created = c.post("/api/projects", json={"text": SAMPLE_CONTRACT}, headers={"X-MP-Token": "tok"})
+    assert created.status_code == 200
+    pid = created.json()["project_id"]
+    assert c.get(f"/api/projects/{pid}").status_code == 401
+    assert c.get(f"/api/projects/{pid}", headers={"X-MP-Token": "tok"}).status_code == 200
+    assert c.get("/api/projects").status_code == 401
+    assert c.get("/api/projects", headers={"X-MP-Token": "tok"}).status_code == 200
 
 
 def test_amount_must_match_its_evidence():
@@ -464,3 +471,63 @@ def test_sandbox_send_suppresses_all_emails():
     pp.send_invoice("X", "r")
     body = json.loads(seen[-1].content)
     assert body == {"send_to_invoicer": False, "send_to_recipient": False}
+
+
+# --- security hardening added 10 Nov 2026 ---
+def test_sandbox_base_rejects_production():
+    with pytest.raises(ValueError, match="sandbox"):
+        SandboxPayPal("c", "s", "W", base="https://api-m.paypal.com")
+
+
+def test_reconcile_rejects_wrong_amount(env):
+    svc, pp, pid, ms = approved(env)
+    svc.c.execute("UPDATE milestones SET op_state='IN_FLIGHT' WHERE id=?", (ms[0]["id"],))
+    project = svc.view(pid)
+    pp.create_draft_invoice(request_id="x", merchant_email=pp.merchant_email, recipient_email=project["client_email"],
+                            title="t", amount="401.00", currency="USD", due_date="2026-11-20", number=f"MP-{pid}-1")
+    r = svc.reconcile_creation(ms[0]["id"], "t")
+    assert "error" in r and state(svc, pid)["op_state"] == "IN_FLIGHT"
+
+
+def test_reconcile_rejects_wrong_recipient(env):
+    svc, pp, pid, ms = approved(env)
+    svc.c.execute("UPDATE milestones SET op_state='IN_FLIGHT' WHERE id=?", (ms[0]["id"],))
+    pp.create_draft_invoice(request_id="x", merchant_email=pp.merchant_email, recipient_email="other@example.com",
+                            title="t", amount="400.00", currency="USD", due_date="2026-11-20", number=f"MP-{pid}-1")
+    r = svc.reconcile_creation(ms[0]["id"], "t")
+    assert "error" in r and state(svc, pid)["op_state"] == "IN_FLIGHT"
+
+
+def test_project_list_summary(env):
+    svc, _, pid, _ = env
+    row = svc.list_projects()["projects"][0]
+    assert row["id"] == pid and row["milestone_count"] == 3 and row["paid_count"] == 0
+    assert row["needs_action"] == "Approve the plan"
+    assert "client_email" not in row
+
+
+def test_natural_language_date_evidence_passes():
+    p = one_plan("400.00", due="2026-12-01",
+                 evidence="Milestone 1: Work, USD 400, due 1 December 2026.")
+    assert validate_plan(p, p.milestones[0].evidence, TODAY) == []
+
+
+def test_webhook_missing_event_id_rejected(env):
+    svc, _, _, _ = env
+    m = sent(env)
+    body = json.dumps({"event_type": "INVOICING.INVOICE.PAID",
+                       "resource": {"invoice": {"id": m["invoice_id"]}}}).encode()
+    with pytest.raises(Rejected, match="missing id"):
+        svc.handle_webhook(SIG, body)
+
+
+def test_webhook_body_size_cap(monkeypatch, tmp_path):
+    monkeypatch.setenv("MP_ADMIN_TOKEN", "tok")
+    monkeypatch.setenv("MP_DB", str(tmp_path / "cap.db"))
+    import importlib
+    import app.main as M
+    importlib.reload(M)
+    from fastapi.testclient import TestClient
+    c = TestClient(M.app)
+    r = c.post("/api/webhooks/paypal", content=b"x" * (64 * 1024 + 1))
+    assert r.status_code == 413

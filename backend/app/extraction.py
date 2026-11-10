@@ -29,8 +29,35 @@ class ProposedPlan(BaseModel):
     ambiguities: list[str] = []
 
 
+_PUNCT = str.maketrans({
+    "\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"',
+    "\u2013": "-", "\u2014": "-", "\xa0": " ",
+})
+
+
 def _norm(s: str) -> str:
-    return re.sub(r"\s+", " ", s).strip().lower()
+    return re.sub(r"\s+", " ", s.translate(_PUNCT)).strip().lower()
+
+
+def _date_variants(iso: str) -> list[str]:
+    """Common ways a contract writes a date, not just the ISO form."""
+    try:
+        d = date.fromisoformat(iso)
+    except ValueError:
+        return [iso]
+    return [
+        iso,
+        d.strftime("%d %B %Y"), d.strftime("%d %b %Y"),
+        f"{d.day} {d.strftime('%B')} {d.year}", f"{d.day} {d.strftime('%b')} {d.year}",
+        d.strftime("%B %d, %Y"), d.strftime("%b %d, %Y"),
+        f"{d.strftime('%B')} {d.day}, {d.year}", f"{d.strftime('%b')} {d.day}, {d.year}",
+        d.strftime("%d/%m/%Y"), d.strftime("%m/%d/%Y"),
+    ]
+
+
+def _date_in_evidence(iso: str, evidence: str) -> bool:
+    ev = _norm(evidence)
+    return any(_norm(v) in ev for v in _date_variants(iso))
 
 
 def validate_plan(plan: ProposedPlan, source_text: str, today: date | None = None) -> list[str]:
@@ -72,7 +99,7 @@ def validate_plan(plan: ProposedPlan, source_text: str, today: date | None = Non
                     errors.append(f"{tag}: amount {m.amount} does not appear in its evidence quote.")
             except InvalidOperation:
                 pass
-            if m.due_date not in m.evidence:
+            if not _date_in_evidence(m.due_date, m.evidence):
                 errors.append(f"{tag}: due date {m.due_date} not in evidence quote; confirm manually.")
             ev = _norm(m.evidence)
             if re.search(r"\b(up to|between|maximum|max\.?|minimum|min\.?|no more than|not to exceed|range)\b", ev) or \
@@ -86,11 +113,22 @@ def validate_plan(plan: ProposedPlan, source_text: str, today: date | None = Non
 
 
 SAMPLE_CONTRACT = """Statement of Work - Acme Labs (billing@acme-labs.example) and the developer.
-Total project fee: USD 1,500.
+
+Parties. This Statement of Work is between Acme Labs (billing@acme-labs.example), the client, and the developer.
+
+Scope. The developer will design the product interface, build a working MVP, and complete launch handover. The work includes design mockups, front-end implementation, and a launch handover session. The client will provide content, product access, and feedback within two business days.
+
 Milestone 1: Design mockups, USD 400, due 2026-11-20.
 Milestone 2: Working MVP, USD 700, due 2026-12-05.
 Milestone 3: Launch and handover, USD 400, due 2026-12-20.
-Revisions beyond two rounds will be billed separately at a rate to be agreed."""
+
+Payment terms. Total project fee: USD 1,500. Payment follows the milestone schedule above. Each invoice is due on the milestone date. The client pays each invoice before the next milestone unlocks. The fee excludes third-party subscriptions and travel.
+
+Revisions. Revisions beyond two rounds will be billed separately at a rate to be agreed.
+
+Acceptance. The client will review each deliverable within five business days and send written acceptance or one consolidated change list.
+
+Governing terms. This agreement is governed by the laws of India. Either party may terminate for material breach after ten business days' written notice."""
 
 
 def sample_extract(source_text: str) -> ProposedPlan:
@@ -111,21 +149,64 @@ def sample_extract(source_text: str) -> ProposedPlan:
     )
 
 
+EXTRACTION_SYSTEM = """You extract milestone payment plans from freelance contracts.
+You only return JSON. You never approve, send, or move money.
+Every milestone must include an exact sentence copied from the contract as evidence.
+Do not invent amounts, dates, clients, or emails. Put anything unclear in ambiguities."""
+
 PROMPT = """Extract a milestone payment plan from the contract. Reply with JSON only:
 {"client_name":str,"client_email":str,"total":"0.00","currency":"USD",
  "milestones":[{"title":str,"amount":"0.00","currency":"USD","due_date":"YYYY-MM-DD","evidence":"exact sentence copied from contract"}],
  "ambiguities":[str]}
-Copy evidence verbatim. List anything unclear in ambiguities. Do not invent amounts.
+Copy evidence verbatim. Use ISO dates (YYYY-MM-DD) in due_date, but keep the contract's original date wording in evidence.
+List anything unclear in ambiguities. Do not invent amounts.
 CONTRACT:
 """
 
 
+def build_extraction_prompt(source_text: str, today: date | None = None) -> str:
+    today = today or date.today()
+    return f"Today is {today.isoformat()}.\n{PROMPT}{source_text}"
+
+
+def parse_plan(raw: str) -> ProposedPlan:
+    if not raw or not raw.strip():
+        raise ValueError("model returned an empty answer")
+    text = raw.strip()
+    if text.startswith("```"):
+        # Some free models wrap JSON in a markdown fence even when asked not to.
+        text = text.split("\n", 1)[1] if "\n" in text else text
+        if text.rstrip().endswith("```"):
+            text = text.rstrip()[:-3].rstrip()
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as e:
+        raise ValueError("model did not return valid JSON") from e
+    if not isinstance(data, dict):
+        raise ValueError("model JSON is not an object")
+    return ProposedPlan.model_validate(data)
+
+
+def extract_with_llm(llm, source_text: str, today: date | None = None) -> ProposedPlan:
+    """One extraction, plus one repair attempt if the model returns invalid JSON."""
+    prompt = build_extraction_prompt(source_text, today)
+    raw = llm.complete(EXTRACTION_SYSTEM, prompt)
+    try:
+        return parse_plan(raw)
+    except ValueError as first:
+        repair = (
+            f"{prompt}\n\nYour previous answer was invalid: {first}."
+            " Return only valid JSON with the exact schema. Do not add prose."
+        )
+        raw2 = llm.complete(EXTRACTION_SYSTEM, repair)
+        try:
+            return parse_plan(raw2)
+        except ValueError as second:
+            raise ValueError(f"model returned an invalid plan twice: {second}") from second
+
+
 def ollama_extract(source_text: str, base_url: str, model: str, client: httpx.Client | None = None) -> ProposedPlan:
-    """Local, free model via Ollama's /api/chat with JSON output."""
-    c = client or httpx.Client(timeout=120)
-    r = c.post(f"{base_url}/api/chat", json={
-        "model": model, "stream": False, "format": "json",
-        "messages": [{"role": "user", "content": PROMPT + source_text}],
-    })
-    r.raise_for_status()
-    return ProposedPlan.model_validate(json.loads(r.json()["message"]["content"]))
+    """Backwards-compatible wrapper around the shared Ollama provider."""
+    from .llm import OllamaLLM
+
+    return extract_with_llm(OllamaLLM(base_url, model, http=client), source_text)

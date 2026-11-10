@@ -13,10 +13,7 @@
   "endpoint": "https://api-m.sandbox.paypal.com/v2/invoicing",
   "invoice_id": "INV2-5B6P-CMK9-FU6Z-7E82",
   "invoice_number": "MP-SMOKE-1794143533",
-  "payer_link": "redacted",
   "expected": "1.00 USD",
-  "merchant": "redacted sandbox business account",
-  "buyer": "redacted sandbox personal account",
   "status_after_send": "UNPAID",
   "at_ist": "2026-11-08 18:42:19",
   "real_calls": [
@@ -43,8 +40,6 @@
    "currency_code": "USD",
    "value": "0.00"
   },
-  "merchant": "redacted sandbox business account",
-  "buyer": "redacted sandbox personal account",
   "transactions": [
    {
     "payment_id": "5PX244119T794353V",

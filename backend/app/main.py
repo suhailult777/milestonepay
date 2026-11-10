@@ -5,9 +5,11 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel
 
 from . import config, db
-from .extraction import SAMPLE_CONTRACT, ollama_extract, sample_extract
+from .extraction import SAMPLE_CONTRACT, extract_with_llm, sample_extract
+from .llm import LLMError, build_llm
 from .paypal import SandboxPayPal, SimulatedPayPal
-from .service import Rejected, Service
+from .risk import sample_risk_review, review_with_llm, validate_risk_review
+from .service import PlanEdit, Rejected, Service
 
 S = config.load()
 conn = db.connect(S.db_path)
@@ -20,6 +22,25 @@ else:
 svc = Service(conn, pp, merchant)
 app = FastAPI(title="MilestonePay")
 ADMIN_TOKEN = os.getenv("MP_ADMIN_TOKEN", "")
+_llm = None
+
+
+def get_llm():
+    """Build the provider chain on first use; sample mode never needs a key."""
+    global _llm
+    if _llm is None:
+        _llm = build_llm(S)
+    return _llm
+
+
+def ai_label() -> str:
+    if S.llm_provider == "sample":
+        return "Fixture output (sample, not live AI)"
+    if S.llm_provider == "ollama":
+        return f"Local Ollama ({S.llm_model})"
+    if S.llm_provider == "openrouter":
+        return "OpenRouter free model with Ollama fallback"
+    return "OpenRouter if a key is present, else local Ollama"
 
 
 def require_token(x_mp_token: str = Header(default="")) -> None:
@@ -29,6 +50,7 @@ def require_token(x_mp_token: str = Header(default="")) -> None:
 
 
 AUTH = [Depends(require_token)]
+MAX_WEBHOOK_BYTES = 64 * 1024
 
 
 class Extract(BaseModel):
@@ -53,22 +75,39 @@ def _wrap(fn, *a):
 def info():
     return {"mode": S.mode, "llm_provider": S.llm_provider,
             "labels": {"paypal": "PayPal SANDBOX (real sandbox API, fake funds)" if S.mode == "live" else "SIMULATED PayPal (sample mode)",
-                       "ai": "Local model via Ollama" if S.llm_provider == "ollama" else "Fixture output (sample, not live AI)"},
+                       "ai": ai_label()},
             "sample_contract": SAMPLE_CONTRACT}
 
 
 @app.post("/api/projects", dependencies=AUTH)
 def create(body: Extract):
     def run():
-        if S.llm_provider == "ollama":
-            plan, src = ollama_extract(body.text, S.llm_base_url, S.llm_model), f"ollama:{S.llm_model}"
-        else:
+        if S.llm_provider == "sample":
             plan, src = sample_extract(body.text), "fixture"
+        else:
+            try:
+                llm = get_llm()
+                plan = extract_with_llm(llm, body.text)
+                src = f"llm:{llm.last_used or S.llm_provider}"
+            except LLMError as e:
+                raise HTTPException(502, str(e))
+            except ValueError as e:
+                raise HTTPException(422, str(e))
         return svc.propose(plan, body.text, src)
     return _wrap(run)
 
 
-@app.get("/api/projects/{pid}")
+@app.get("/api/projects", dependencies=AUTH)
+def projects():
+    return _wrap(svc.list_projects)
+
+
+@app.get("/api/brief", dependencies=AUTH)
+def brief():
+    return _wrap(svc.portfolio_brief)
+
+
+@app.get("/api/projects/{pid}", dependencies=AUTH)
 def get(pid: str):
     return _wrap(svc.view, pid)
 
@@ -77,6 +116,28 @@ def get(pid: str):
 def approve(pid: str, w: Who):
     _wrap(svc.approve, pid, w.approver)
     return svc.view(pid)
+
+
+@app.post("/api/projects/{pid}/risk", dependencies=AUTH)
+def risk(pid: str):
+    def run():
+        p = svc.view(pid)
+        if S.llm_provider == "sample":
+            review = sample_risk_review(p["source_text"])
+        else:
+            try:
+                review = review_with_llm(get_llm(), p["source_text"])
+            except LLMError as e:
+                raise HTTPException(502, str(e))
+        clean, dropped = validate_risk_review(review, p["source_text"])
+        svc.save_risk(pid, clean.model_dump(), dropped, "You")
+        return {"risk": clean.model_dump(), "dropped": dropped}
+    return _wrap(run)
+
+
+@app.put("/api/projects/{pid}/plan", dependencies=AUTH)
+def edit_plan(pid: str, body: PlanEdit):
+    return _wrap(svc.update_plan, pid, body, "You")
 
 
 @app.post("/api/milestones/{mid}/draft", dependencies=AUTH)
@@ -102,6 +163,8 @@ def refresh(mid: str, w: Who):
 @app.post("/api/webhooks/paypal")
 async def webhook(req: Request):
     raw = await req.body()
+    if len(raw) > MAX_WEBHOOK_BYTES:
+        raise HTTPException(413, "webhook body too large")
     try:
         return svc.handle_webhook(dict(req.headers), raw)
     except Rejected as e:

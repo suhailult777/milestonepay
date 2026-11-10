@@ -37,7 +37,8 @@ HEADER_MAP = {
 class SandboxPayPal:
     def __init__(self, client_id: str, secret: str, webhook_id: str,
                  base: str = "https://api-m.sandbox.paypal.com", http: httpx.Client | None = None):
-        assert "sandbox" in base, "production is not supported"
+        if "sandbox" not in base:
+            raise ValueError("production is not supported; base URL must be a PayPal sandbox host")
         self._id, self._secret, self._webhook_id, self._base = client_id, secret, webhook_id, base
         self._http = http or httpx.Client(timeout=30)
         self._token: str | None = None
@@ -153,6 +154,7 @@ class SimulatedPayPal:
         iid = f"SIM-INV-{uuid.uuid4().hex[:8].upper()}"
         self.invoices[iid] = {"id": iid, "status": "DRAFT", "invoicer": {"email_address": merchant_email},
                               "amount": {"currency_code": currency, "value": amount},
+                              "primary_recipients": [{"billing_info": {"email_address": recipient_email}}],
                               "payments": {"paid_amount": {"currency_code": currency, "value": "0.00"}}}
         self.by_request[request_id] = iid
         self.invoices[iid]["number"] = number
