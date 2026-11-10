@@ -1,0 +1,72 @@
+{
+ "run_1_in_buyer_blocked": {
+  "at_ist": "2026-11-08 ~18:35",
+  "invoice_id": "INV2-7BMV-UP2D-486G-B4KC",
+  "result": "send 406 INR_FOREIGN_CURRENCY_BLOCKED (IN buyer); left as DRAFT",
+  "debug_ids": [
+   "f308847b1388d",
+   "f38823132dc85"
+  ]
+ },
+ "run_2_us_buyer_create_send": {
+  "at_utc": "2026-11-08T13:12:19.689490Z",
+  "endpoint": "https://api-m.sandbox.paypal.com/v2/invoicing",
+  "invoice_id": "INV2-5B6P-CMK9-FU6Z-7E82",
+  "invoice_number": "MP-SMOKE-1794143533",
+  "payer_link": "redacted",
+  "expected": "1.00 USD",
+  "merchant": "redacted sandbox business account",
+  "buyer": "redacted sandbox personal account",
+  "status_after_send": "UNPAID",
+  "at_ist": "2026-11-08 18:42:19",
+  "real_calls": [
+   "POST /v1/oauth2/token",
+   "POST /v2/invoicing/invoices",
+   "POST /v2/invoicing/search-invoices (1 match)",
+   "POST /v2/invoicing/invoices/{id}/send (no emails)",
+   "GET /v2/invoicing/invoices/{id} -> UNPAID"
+  ]
+ },
+ "buyer_checkout": {
+  "by": "browser, sandbox US buyer, once",
+  "note": "fake sandbox funds"
+ },
+ "run_3_fresh_get_paid": {
+  "at_ist": "2026-11-08 18:47:04",
+  "call": "GET /v2/invoicing/invoices/INV2-5B6P-CMK9-FU6Z-7E82",
+  "status": "PAID",
+  "paid_amount": {
+   "currency_code": "USD",
+   "value": "1.00"
+  },
+  "due": {
+   "currency_code": "USD",
+   "value": "0.00"
+  },
+  "merchant": "redacted sandbox business account",
+  "buyer": "redacted sandbox personal account",
+  "transactions": [
+   {
+    "payment_id": "5PX244119T794353V",
+    "type": "PAYPAL",
+    "method": "PAYPAL",
+    "amount": {
+     "currency_code": "USD",
+     "value": "1.00"
+    },
+    "date": "2026-11-08"
+   }
+  ],
+  "assert_pass": true
+ },
+ "run_4_service_reconcile_real_get": {
+  "at_ist": "2026-11-08 18:47:20",
+  "scope": "Service.refresh_from_paypal on isolated in-memory fixture bound to this invoice; not the UI flow",
+  "result": "milestone_paid; checks merchant/currency/amount/paid_full all true"
+ },
+ "run_5_forged_webhook_local_live_server": {
+  "at_ist": "2026-11-08 18:47:57",
+  "scope": "local live-mode server port 8010, unregistered webhook id; real verify call",
+  "result": "HTTP 400 rejected (fail closed). Valid signed event NOT tested (needs public webhook)"
+ }
+}

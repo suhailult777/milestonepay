@@ -1,0 +1,99 @@
+[
+ {
+  "plan": {
+   "client_name": "Nordwind GmbH",
+   "client_email": "accounts@nordwind.example",
+   "total": "2400.00",
+   "currency": "USD",
+   "milestones": [
+    {
+     "title": "Wireframes",
+     "amount": "600.00",
+     "currency": "USD",
+     "due_date": "2026-11-25",
+     "evidence": "Phase 1 - Wireframes: USD 600, due by 2026-11-25."
+    },
+    {
+     "title": "Frontend build",
+     "amount": "1200.00",
+     "currency": "USD",
+     "due_date": "2026-12-10",
+     "evidence": "Phase 2 - Frontend build: USD 1,200, due by 2026-12-10."
+    },
+    {
+     "title": "QA and deployment",
+     "amount": "600.00",
+     "currency": "USD",
+     "due_date": "2026-12-22",
+     "evidence": "Phase 3 - QA and deployment: USD 600, due by 2026-12-22."
+    }
+   ],
+   "ambiguities": []
+  },
+  "errors": [],
+  "name": "clean_3_milestones",
+  "seconds": 17.0
+ },
+ {
+  "plan": {
+   "client_name": "BrightLoop Inc",
+   "client_email": "finance@brightloop.example",
+   "total": "900.00",
+   "currency": "USD",
+   "milestones": [
+    {
+     "title": "Initial Payment",
+     "amount": "300.00",
+     "currency": "USD",
+     "due_date": "2026-11-15",
+     "evidence": "We'll pay USD 300 upfront when you start on 2026-11-15, and the remaining USD 600 once the site goes live, targeted for 2026-12-01."
+    },
+    {
+     "title": "Final Payment",
+     "amount": "600.00",
+     "currency": "USD",
+     "due_date": "2026-12-01",
+     "evidence": "and the remaining USD 600 once the site goes live, targeted for 2026-12-01."
+    }
+   ],
+   "ambiguities": [
+    "Hosting costs may be reimbursed later if approved by our manager."
+   ]
+  },
+  "errors": [],
+  "name": "prose_with_ambiguity",
+  "seconds": 28.8
+ },
+ {
+  "plan": {
+   "client_name": "Sato Design LLC",
+   "client_email": "pay@sato.example",
+   "total": "1000.00",
+   "currency": "USD",
+   "milestones": [
+    {
+     "title": "logo concepts",
+     "amount": "450.00",
+     "currency": "USD",
+     "due_date": "2026-11-30",
+     "evidence": "Milestone A: logo concepts, USD 450, due 2026-11-30."
+    },
+    {
+     "title": "brand guide",
+     "amount": "450.00",
+     "currency": "USD",
+     "due_date": "2026-12-15",
+     "evidence": "Milestone B: brand guide, USD 450, due 2026-12-15."
+    }
+   ],
+   "ambiguities": [
+    "A final bonus of USD 100 may be paid at the client's discretion."
+   ]
+  },
+  "errors": [
+   "Milestones sum to 900.00 but total is 1000.00."
+  ],
+  "name": "sum_mismatch_trap",
+  "seconds": 14.3
+ }
+]

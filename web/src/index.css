@@ -1,0 +1,25 @@
+body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;background:#f6f7f9;color:#14171a;line-height:1.45}
+main{max-width:960px;margin:0 auto;padding:24px}
+h1{margin:0 0 4px}
+h3{margin:0 0 10px}
+header{margin-bottom:8px}
+.card{background:#fff;border:1px solid #dde1e6;border-radius:10px;padding:16px;margin:12px 0}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;background:#eef}
+.sim{background:#fff3cd;color:#7a5600}.live{background:#d1f2e0;color:#0b5d33}
+.no-funds{background:#14171a;color:#fff}
+.PAID{background:#d1f2e0;color:#0b5d33}.SENT,.DRAFTED{background:#e3ecff;color:#123a7a}
+.MISMATCH,.REFUNDED,.PARTIAL,.CANCELLED{background:#fde2e1;color:#8a1111}
+.locked{background:#e9eaec;color:#444}
+.APPROVED{background:#d1f2e0;color:#0b5d33}.PROPOSED{background:#e3ecff;color:#123a7a}.BLOCKED{background:#fde2e1;color:#8a1111}
+blockquote{margin:8px 0;padding:6px 10px;border-left:3px solid #7a8bff;background:#f3f4ff;font-size:14px}
+button{margin:2px 8px 2px 0;padding:6px 12px;border-radius:6px;border:1px solid #aab;cursor:pointer;background:#fff}
+button:disabled{opacity:.45;cursor:not-allowed}
+textarea{width:100%;min-height:150px;font-family:ui-monospace,Consolas,monospace;font-size:13px;box-sizing:border-box;margin-bottom:8px}
+.err{color:#a40000}.warn{color:#7a5600}.muted{color:#5b6573}.small{font-size:13px}
+.mono{font-family:ui-monospace,Consolas,monospace;font-size:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.buttons{margin-top:8px}
+.blocked{border:1px solid #f3b6b3;background:#fff6f6;border-radius:8px;padding:10px;margin:8px 0}
+.result{background:#f0f2f5;border-radius:6px;padding:8px;word-break:break-word}
+.audit{border-top:1px solid #eef0f3;padding:3px 0;word-break:break-word}
+.is-locked{background:#fbfbfc}

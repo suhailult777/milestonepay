@@ -1,0 +1,34 @@
+{
+  "date_ist": "2026-11-10",
+  "scope": "Laptop UI click-through; PayPal sandbox only; fake funds; no real money",
+  "mode": "MP_MODE=live, LLM_PROVIDER=ollama (qwen2.5:3b-instruct)",
+  "invoice_id": "INV2-49NL-8AUM-4U23-WUYL",
+  "invoice_number": "MP-64a200e4ce94-1",
+  "amount": {
+    "currency": "USD",
+    "value": "400.00"
+  },
+  "buyer": "US sandbox personal account (details redacted)",
+  "merchant": "sandbox business account (email redacted)",
+  "payment": {
+    "invoice_status": "PAID",
+    "amount_due": "0.00",
+    "total_paid": "400.00"
+  },
+  "app_fresh_get_checks": {
+    "merchant": true,
+    "currency": true,
+    "amount": true,
+    "paid_full": true
+  },
+  "app_result": "milestone_paid",
+  "milestone_2": {
+    "invoice_id": "INV2-8VKB-NZRP-SFZX-ZPNS",
+    "status": "DRAFTED",
+    "sent": false,
+    "paid": false
+  },
+  "milestone_3_status": "PLANNED_LOCKED",
+  "webhook": "No webhook registered; poll refresh was used and is the verified payment path.",
+  "notes": "Payment completed in the sandbox buyer browser. The app did not trust the browser success page; it called PayPal fresh and checked status, merchant, currency, invoice amount, and paid amount."
+}
