@@ -121,7 +121,11 @@ class SandboxPayPal:
             return False
         # API expects webhook_event as a JSON object. We splice the received bytes in as that
         # object (after checking they parse as one) so whitespace/key order are not altered.
-        if not isinstance(json.loads(raw_body), dict):
+        try:
+            event = json.loads(raw_body)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return False
+        if not isinstance(event, dict):
             return False
         prefix = json.dumps({**fields, "webhook_id": self._webhook_id})[:-1]
         content = prefix.encode() + b', "webhook_event": ' + raw_body + b"}"

@@ -10,6 +10,7 @@
   font-size: 14px;
   font-weight: 600;
   line-height: 20px;
+  text-decoration: none;
   cursor: pointer;
   transition: background-color var(--dur-micro) var(--ease), color var(--dur-micro) var(--ease), border-color var(--dur-micro) var(--ease), transform var(--dur-micro) var(--ease);
 }

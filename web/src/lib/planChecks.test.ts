@@ -36,4 +36,49 @@ describe('checkPlan', () => {
   it('fails a non-USD plan', () => {
     expect(checkPlan(contract, { ...base, currency: 'EUR' }, today).find(c => c.key === 'currency')).toMatchObject({ ok: false })
   })
+
+  it('accepts the natural date and comma amount the backend accepts', () => {
+    const quote = 'Milestone 1: Work, USD 1,200, due 1 December 2026.'
+    const draft = {
+      total: '1200.00', currency: 'USD',
+      milestones: [{ amount: '1200.00', due_date: '2026-12-01', evidence: quote }],
+    }
+    expect(checkPlan(quote, draft, today).find(c => c.key === 'quotes')).toMatchObject({ ok: true })
+  })
+
+  it('accepts a month-first date with a two-digit day', () => {
+    const quote = 'Milestone 1: Work, USD 400, due November 20, 2026.'
+    const draft = {
+      total: '400.00', currency: 'USD',
+      milestones: [{ amount: '400.00', due_date: '2026-11-20', evidence: quote }],
+    }
+    expect(checkPlan(quote, draft, today).find(c => c.key === 'quotes')).toMatchObject({ ok: true })
+  })
+
+  it('accepts a zero-padded month-first date the backend accepts', () => {
+    const quote = 'Milestone 1: Work, USD 400, due December 05, 2026.'
+    const draft = {
+      total: '400.00', currency: 'USD',
+      milestones: [{ amount: '400.00', due_date: '2026-12-05', evidence: quote }],
+    }
+    expect(checkPlan(quote, draft, today).find(c => c.key === 'quotes')).toMatchObject({ ok: true })
+  })
+
+  it('fails a range or limit quote, matching the backend', () => {
+    const quote = 'Milestone 1: Work, up to USD 400, due 2026-11-20.'
+    const draft = {
+      total: '400.00', currency: 'USD',
+      milestones: [{ amount: '400.00', due_date: '2026-11-20', evidence: quote }],
+    }
+    expect(checkPlan(quote, draft, today).find(c => c.key === 'quotes')).toMatchObject({ ok: false })
+  })
+
+  it('does not accept an amount that only appears as part of a larger number', () => {
+    const quote = 'Milestone 1: Work, USD 1,400, due 2026-11-20.'
+    const draft = {
+      total: '400.00', currency: 'USD',
+      milestones: [{ amount: '400.00', due_date: '2026-11-20', evidence: quote }],
+    }
+    expect(checkPlan(quote, draft, today).find(c => c.key === 'quotes')).toMatchObject({ ok: false })
+  })
 })

@@ -135,7 +135,7 @@ export function WorkbenchPage({ id, info, onChanged, notify }:
   } : null
   const currentDraft = draft ?? projectDraft
   const checks = project && currentDraft ? checkPlan(project.source_text, currentDraft) : []
-  const canApprove = checks.length > 0 && checks.every(check => check.ok)
+  const canApprove = project?.status === 'PROPOSED' && checks.length > 0 && checks.every(check => check.ok)
 
   const startEdit = () => {
     if (!projectDraft) return
@@ -275,7 +275,7 @@ export function WorkbenchPage({ id, info, onChanged, notify }:
         onConfirm={() => {
           const target = sendTarget
           setSendTarget(null)
-          if (target) void run('Sending invoice', () => api(`/api/milestones/${target.id}/send`, { approver: 'You', confirm: true }), 'Invoice sent. No PayPal email was sent.')
+          if (target) void run('Sending invoice', () => api(`/api/milestones/${target.id}/send`, { approver: 'You', confirm: true }), 'Invoice sent. Open the payer link in the ledger. No PayPal email was sent.')
         }}>
         {sendTarget && <p>Send <strong>{sendTarget.title}</strong> for <Money amountMinor={toMinor(sendTarget.amount)} size="sm" />? PayPal will not email anyone.</p>}
       </Dialog>

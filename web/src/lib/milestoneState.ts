@@ -1,4 +1,4 @@
-import { formatDue } from './dates'
+import { formatDue, todayIso } from './dates'
 
 export type MilestoneKind = 'paid' | 'sent' | 'overdue' | 'draft' | 'locked'
 export type PrimaryAction = 'invoice' | 'send' | 'check' | null
@@ -24,7 +24,7 @@ export type MilestoneView = {
 }
 
 export function deriveMilestoneView(plan: PlanLike, milestone: MilestoneLike, invoice: { id: string } | null, now: Date): MilestoneView {
-  const today = now.toISOString().slice(0, 10)
+  const today = todayIso(now)
   const prior = plan.milestones.find(m => m.seq < milestone.seq && m.status !== 'PAID')
   const due = milestone.due_date < today
   const dueLabel = due && milestone.status === 'SENT' ? `Overdue since ${formatDue(milestone.due_date)}` : `Due ${formatDue(milestone.due_date)}`

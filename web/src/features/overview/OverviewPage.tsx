@@ -99,8 +99,8 @@ export function OverviewPage({ projects = [], details = [], brief, loading, erro
   for (const project of details) {
     for (const m of project.milestones) {
       if (m.status === 'PAID') received += toMinor(m.amount)
-      else if (m.status === 'SENT') awaiting += toMinor(m.amount)
-      else if (m.status === 'PLANNED') locked += toMinor(m.amount)
+      else if (m.status === 'SENT' || m.status === 'PARTIAL' || m.status === 'MISMATCH') awaiting += toMinor(m.amount)
+      else if (m.status === 'PLANNED' || m.status === 'DRAFTED') locked += toMinor(m.amount)
     }
   }
   if (!details.length && brief) {

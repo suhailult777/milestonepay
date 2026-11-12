@@ -40,7 +40,7 @@ The extraction layer has one interface and four provider modes. Sample mode is a
 | `openrouter` | OpenRouter free model, with local Ollama as fallback | OpenRouter, then local |
 | `auto` | OpenRouter if the external key file exists, otherwise Ollama | OpenRouter or local |
 
-The OpenRouter key and preset live outside the repo in `~/milestonepay_secrets/.env.openrouter` on Windows, or `~/milestonepay_secrets/.env.openrouter` on macOS/Linux. The file can set `OPENROUTER_API_KEY`, `OPENROUTER_PRESET`, and `OPENROUTER_FALLBACKS`. The app reads it at runtime, never logs it, never returns it from the API, and never commits it. Provider tests use mocked HTTP, so the suite needs no key. If the OpenRouter call fails, `openrouter` and `auto` fall through to Ollama.
+The OpenRouter key and preset live outside the repo in `~/milestonepay_secrets/.env.openrouter` on Windows and macOS/Linux. The file can set `OPENROUTER_API_KEY`, `OPENROUTER_PRESET`, and `OPENROUTER_FALLBACKS`. The app reads it at runtime, never logs it, never returns it from the API, and never commits it. Provider tests use mocked HTTP, so the suite needs no key. If the OpenRouter call fails, `openrouter` and `auto` fall through to Ollama.
 
 ## Quick start on Windows (sample mode, no keys)
 
@@ -80,9 +80,9 @@ cd web
 npm run dev
 ```
 
-Open `http://127.0.0.1:5173`. In sample mode you can Extract, Approve, Draft, Send, Simulate client payment, Send a forged webhook, and **Arm create timeout** to see the reconciliation lock and exact-invoice-number recovery. The sample extractor only accepts the bundled contract text; switch `LLM_PROVIDER=ollama` for other contracts.
+Open `http://127.0.0.1:5173`. In sample mode you can propose milestones, edit the plan, approve it, create a draft invoice, send it, simulate client payment, and send a forged webhook. The sample extractor only accepts the bundled contract text; switch `LLM_PROVIDER=ollama` for other contracts. The sample-only `POST /api/simulate/timeout/{milestone_id}` and `POST /api/milestones/{milestone_id}/reconcile` endpoints exercise the create-timeout lock and exact-number recovery; the current UI has no button for those two steps.
 
-To reopen an existing project after a page reload, add its id: `http://127.0.0.1:5173/?project=<project_id>`. The project id is the middle part of an invoice number such as `MP-<project_id>-1`.
+To reopen an existing project after a page reload, open `http://127.0.0.1:5173/p/<project_id>`. The project id is the middle part of an invoice number such as `MP-<project_id>-1`.
 
 ## Quick start on macOS or Linux (sample mode, no keys)
 
@@ -116,7 +116,7 @@ Run the tests:
 ```powershell
 cd backend
 ..\.venv\Scripts\python -m pytest -q
-# 128 passed
+# 129 passed
 ```
 
 ## Live PayPal sandbox
@@ -176,9 +176,9 @@ Flow: `extract -> validate -> optional risk review -> human edit/approve -> draf
 
 ## Verified and not verified
 
-Verified on this laptop on 10 Nov 2026:
+Verified on this laptop on 10 Nov 2026, with the final-review branch rechecked on 12 Nov 2026:
 
-- 128 mocked/simulated tests pass (`pytest -q`), including amount and date boundary tables, range/limit evidence, prompt-injection cases, API routes, config validation, risk quote checks, plan editing, and the portfolio brief.
+- 129 backend tests pass on 12 Nov 2026 (`pytest -q`); 34 frontend tests pass (`npm test`); the web build passes, lint has 0 warnings, and axe has 0 serious or critical findings at 1440 and 390.
 - OpenRouter and Ollama providers are covered by mocked HTTP tests; the external key file builds the OpenRouter -> Ollama chain.
 - A live OpenRouter free-model smoke test was attempted on 10 Nov 2026 with the bundled sample contract. The three allowed explicit `:free` calls did not pass: two earlier attempts failed before the final guarded call, and the final call on `google/gemma-4-26b-a4b-it:free` was rate-limited. No live free-model run is claimed. The redacted artifact is `backend/evals/openrouter_smoke_20261110.json`. `LLM_PROVIDER=auto` falls back to local Ollama.
 - Sample-mode UI flow clicked end to end in a browser with the earlier layout: extract, approve, draft, send, simulated payment, milestone 1 `PAID`, milestone 2 unlocked, milestone 3 still locked.
@@ -196,6 +196,7 @@ Historical real PayPal sandbox evidence from the development box (8 Nov 2026, no
 Not verified anywhere:
 
 - A valid **signed** PayPal webhook (no public endpoint was reachable; polling is the verified path).
+- A UI control for reconciliation after an unknown create outcome; the endpoint is covered by tests and API calls, but the current UI has no Reconcile button.
 - A live sandbox refund or chargeback (mocked only).
 - A live OpenRouter free-model response. Three allowed calls on 10 Nov 2026 did not pass; the final call was rate-limited.
 - Real money movement, production behavior, multi-user auth, or fraud detection.

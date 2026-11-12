@@ -15,7 +15,10 @@ export function PlanEditor({ draft, checks, busy, onChange, onSave, onCancel, on
     onReextract: () => void
   }) {
   const allOk = checks.every(check => check.ok)
-  const disabled = allOk ? {} : { disabled: true as const, disabledReason: 'Fix the failed checks before saving.' }
+  const identityOk = draft.client_name.trim() !== '' && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(draft.client_email.trim())
+  const ready = allOk && identityOk
+  const fixReason = !identityOk ? 'Add a client name and a valid email.' : 'Fix the failed checks before saving.'
+  const disabled = ready ? {} : { disabled: true as const, disabledReason: fixReason }
   const updateMilestone = (id: string, patch: Partial<PlanDraft['milestones'][number]>) => {
     onChange({ milestones: draft.milestones.map(m => m.id === id ? { ...m, ...patch } : m) })
   }
@@ -24,6 +27,14 @@ export function PlanEditor({ draft, checks, busy, onChange, onSave, onCancel, on
       <div className="plan-editor-head">
         <div><h3>Edit plan</h3><p className="muted small">Evidence stays locked. Fix the source contract and re-extract if a quote is wrong.</p></div>
         <Button variant="quiet" onClick={onReextract}>Re-extract from contract</Button>
+      </div>
+      <div className="plan-identity">
+        <label className="ui-field plan-total">Client name
+          <input className="ui-input" value={draft.client_name} onChange={e => onChange({ client_name: e.target.value })} />
+        </label>
+        <label className="ui-field plan-total">Client email
+          <input className="ui-input" type="email" value={draft.client_email} onChange={e => onChange({ client_email: e.target.value })} />
+        </label>
       </div>
       <label className="ui-field plan-total">Total (USD)
         <input className="ui-input" value={draft.total} onChange={e => onChange({ total: e.target.value })} />
@@ -55,8 +66,8 @@ export function PlanEditor({ draft, checks, busy, onChange, onSave, onCancel, on
       <div className="plan-editor-actions">
         <Button variant="primary" {...disabled} loading={busy === 'Saving plan'} onClick={onSave}>Save changes</Button>
         <Button variant="secondary" onClick={onCancel}>Cancel</Button>
-        {!allOk && <span className="disabled-reason">Fix the failed checks before saving.</span>}
-        {allOk && <span className="muted small">Saving does not approve the plan.</span>}
+        {!ready && <span className="disabled-reason">{fixReason}</span>}
+        {ready && <span className="muted small">Saving does not approve the plan.</span>}
       </div>
     </div>
   )

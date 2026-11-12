@@ -39,8 +39,11 @@ export function Ledger({ project, activeId, busy, justPaid, editing, draft, chec
   const firstActive = views.find(x => x.view.active)?.m.id ?? null
   const selected = activeId ?? firstActive
   const approved = project.audit.find(a => a.action === 'approved_plan')
-  const canApprove = checks.length > 0 && checks.every(check => check.ok)
-  const approveDisabled = canApprove ? {} : { disabled: true as const, disabledReason: 'Fix the failed checks before approving.' }
+  const canApprove = project.status === 'PROPOSED' && checks.length > 0 && checks.every(check => check.ok)
+  const approveReason = project.status === 'BLOCKED'
+    ? 'Fix the client details or the failed checks before approving.'
+    : 'Fix the failed checks before approving.'
+  const approveDisabled = canApprove ? {} : { disabled: true as const, disabledReason: approveReason }
 
   return (
     <section className="ledger-sheet" aria-label="Milestones">
@@ -61,7 +64,7 @@ export function Ledger({ project, activeId, busy, justPaid, editing, draft, chec
               <div className="plan-bar-actions">
                 <Button variant="secondary" onClick={onEdit}><PencilLine size={16} /> Edit plan</Button>
                 <Button variant="primary" {...approveDisabled} loading={busy === 'Approving plan'} onClick={onApprove}>Approve plan</Button>
-                {!canApprove && <span className="disabled-reason">Fix the failed checks before approving.</span>}
+                {!canApprove && <span className="disabled-reason">{approveReason}</span>}
               </div>
             </div>
           )}
@@ -97,7 +100,7 @@ export function Ledger({ project, activeId, busy, justPaid, editing, draft, chec
                 {view.primaryAction === 'check' && (
                   <Button variant="secondary" loading={busy === 'Checking PayPal'} onClick={() => onCheck(m)}>Check with PayPal</Button>
                 )}
-                {m.status === 'PAID' && m.pay_link && (
+                {m.pay_link && ['SENT', 'PAID', 'PARTIAL', 'MISMATCH'].includes(m.status) && (
                   <a className="ui-button ui-button-secondary" href={m.pay_link} target="_blank" rel="noreferrer">Open payer link</a>
                 )}
               </MilestoneRow>

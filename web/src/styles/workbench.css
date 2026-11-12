@@ -94,6 +94,8 @@
 .plan-editor-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
 .plan-editor-head h3 { font-size: 20px; line-height: 28px; }
 .plan-total { max-width: 220px; margin-bottom: 12px; }
+.plan-identity { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 560px; }
+.plan-identity .plan-total { max-width: none; }
 .plan-edit-rows { display: flex; flex-direction: column; }
 .plan-edit-row { border-top: 1px solid var(--line); padding: 14px 0; }
 .plan-edit-fields { display: grid; grid-template-columns: 2fr 1fr 1.2fr; gap: 10px; }
@@ -128,6 +130,7 @@
   .trust-mobile { display: block; background: var(--sheet); border: 1px solid var(--line); border-radius: var(--r-sheet); padding: 0 16px; }
   .trust-mobile summary { display: flex; align-items: center; min-height: 44px; }
   .plan-edit-fields { grid-template-columns: 1fr; }
+  .plan-identity { grid-template-columns: 1fr; }
   .mobile-tabs {
     display: flex;
     gap: 4px;

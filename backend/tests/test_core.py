@@ -6,7 +6,7 @@ import pytest
 
 from app import db
 from app.extraction import SAMPLE_CONTRACT, ProposedMilestone, ProposedPlan, sample_extract, validate_plan
-from app.paypal import SandboxPayPal, SimulatedPayPal
+from app.paypal import HEADER_MAP, SandboxPayPal, SimulatedPayPal
 from app.service import Rejected, Service
 
 TODAY = date(2026, 11, 8)
@@ -338,6 +338,12 @@ def test_sandbox_adapter_5xx_and_non_object_event():
     assert e.value.status == 503 and e.value.debug_id == "d5"
     hdr = {k: "v" for k in P.HEADER_MAP.values()}
     assert pp.verify_webhook(hdr, b"[1,2]") is False
+
+
+def test_sandbox_webhook_malformed_json_fails_closed():
+    hdr = {k: "v" for k in HEADER_MAP.values()}
+    pp = SandboxPayPal("c", "s", "W")
+    assert pp.verify_webhook(hdr, b"{not json") is False
 
 
 def test_api_requires_token(monkeypatch, tmp_path):
